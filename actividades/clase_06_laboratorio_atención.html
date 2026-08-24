@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IIC3182 · Laboratorio de atención</title>
+<style>
+  :root{
+    --navy:#2F3C7E; --coral:#F96167; --gold:#F9E795; --goldsoft:#FDF6DC;
+    --light:#F4F5FA; --ink:#232323; --gray:#6B6B6B; --white:#fff;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family:Calibri,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    color:var(--ink); background:var(--light); line-height:1.5;
+  }
+  .wrap{max-width:760px;margin:0 auto;padding:16px}
+  header{background:var(--navy);color:#fff;padding:22px 16px}
+  header .wrap{padding:0}
+  header h1{margin:0 0 4px;font-size:24px}
+  header p{margin:0;color:#CADCFC;font-size:14px}
+  .card{background:#fff;border-radius:14px;padding:20px;margin:16px 0;box-shadow:0 1px 3px rgba(0,0,0,.07)}
+  h2{color:var(--navy);font-size:20px;margin:0 0 6px}
+  .lead{color:var(--gray);font-style:italic;margin:0 0 14px;font-size:14px}
+  button{
+    font-family:inherit;font-size:16px;font-weight:bold;border:0;border-radius:10px;
+    padding:13px 22px;cursor:pointer;background:var(--navy);color:#fff;
+  }
+  button.coral{background:var(--coral)}
+  button.ghost{background:var(--light);color:var(--navy)}
+  button:disabled{opacity:.45;cursor:default}
+  .steps{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 4px}
+  .chip{font-size:12px;font-weight:bold;padding:5px 10px;border-radius:20px;background:var(--light);color:var(--gray)}
+  .chip.on{background:var(--coral);color:#fff}
+  .chip.done{background:var(--navy);color:#fff}
+  .big{font-size:40px;font-weight:bold;color:var(--navy);text-align:center;margin:10px 0}
+  .note{background:var(--goldsoft);border-radius:10px;padding:12px 14px;font-size:14px;margin-top:14px}
+  .hidden{display:none !important}
+
+  /* estación reacción */
+  #rtBox{
+    height:190px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+    color:#fff;font-size:19px;font-weight:bold;text-align:center;padding:14px;cursor:pointer;user-select:none;
+  }
+  .rt-wait{background:#B23A3F}
+  .rt-go{background:#1E9E5A}
+  .rt-idle{background:var(--navy)}
+
+  /* estación búsqueda */
+  #searchGrid{position:relative;height:300px;background:#fff;border:2px solid var(--light);border-radius:12px;overflow:hidden}
+  .item{position:absolute;width:26px;height:26px}
+  .sq{border-radius:4px}
+  .ci{border-radius:50%}
+
+  /* estación 5 segundos */
+  .fake{border:2px solid #e3e3e3;border-radius:10px;overflow:hidden;font-size:12px}
+  .fk-bar{background:var(--navy);color:#fff;padding:8px 10px;font-weight:bold}
+  .fk-hero{padding:26px 14px;text-align:center;background:#fff}
+  .fk-hero h3{margin:0 0 8px;font-size:22px;color:var(--ink)}
+  .fk-cta{display:inline-block;background:var(--coral);color:#fff;padding:11px 26px;border-radius:8px;font-weight:bold;font-size:15px}
+  .fk-row{display:flex;gap:6px;padding:8px;flex-wrap:wrap}
+  .fk-blk{flex:1 1 30%;background:var(--light);border-radius:6px;padding:8px;min-height:52px;font-size:11px}
+  .fk-ad{background:#FFD84D;color:#7a5c00;text-align:center;font-weight:bold;padding:10px;font-size:13px}
+  .fk-ad2{background:var(--coral);color:#fff;text-align:center;font-weight:bold;padding:9px;font-size:13px}
+
+  /* estación cambio */
+  #cbStage{position:relative;height:290px;background:#fff;border:2px solid var(--light);border-radius:12px;overflow:hidden}
+  .cbItem{position:absolute;border-radius:6px}
+
+  .opts button{display:block;width:100%;text-align:left;background:var(--light);color:var(--ink);
+    font-weight:normal;margin:7px 0;padding:12px 14px;font-size:15px}
+  .opts button:hover{background:#e8eaf5}
+
+  table{width:100%;border-collapse:collapse;font-size:15px;margin-top:8px}
+  td,th{padding:9px 6px;border-bottom:1px solid #eee;text-align:left}
+  th{font-size:12px;color:var(--gray);text-transform:uppercase;letter-spacing:.5px}
+  td.v{text-align:right;font-weight:bold;color:var(--navy);white-space:nowrap}
+  th.r,td.r{text-align:right}
+  .pred{background:var(--goldsoft);border-radius:10px;padding:14px;margin-bottom:14px}
+  .pred label{display:block;font-weight:bold;font-size:15px;margin-bottom:8px;color:var(--navy)}
+  .pred input{font-family:inherit;font-size:17px;padding:10px;border:2px solid #e0d9b8;border-radius:8px;width:120px}
+  .pred small{display:block;color:var(--gray);font-size:13px;margin-top:6px}
+  .gap-ok{color:#1E9E5A;font-weight:bold}
+  .gap-bad{color:var(--coral);font-weight:bold}
+  code{background:var(--navy);color:var(--gold);padding:12px;border-radius:8px;display:block;
+    font-size:15px;word-break:break-all;margin-top:8px;font-family:Consolas,Menlo,monospace}
+  footer{text-align:center;color:var(--gray);font-size:12px;padding:22px 16px 40px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <h1>Laboratorio de atención</h1>
+    <p>IIC3182 · Clase 6 · Trabajen en parejas, pero cada uno hace sus propias pruebas</p>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="steps" id="steps">
+    <span class="chip on" id="c1">1 · Reacción</span>
+    <span class="chip" id="c2">2 · Búsqueda</span>
+    <span class="chip" id="c3">3 · Cinco segundos</span>
+    <span class="chip" id="c4">4 · Cambio</span>
+    <span class="chip" id="c5">Resultados</span>
+  </div>
+
+  <!-- ============ ESTACIÓN 1 ============ -->
+  <section class="card" id="s1">
+    <h2>Estación 1 · ¿Cuánto demoras en reaccionar?</h2>
+    <p class="lead">Cinco intentos. Toca el recuadro apenas se ponga verde. Si te adelantas, ese intento se repite.</p>
+    <div class="pred" id="p1">
+      <label for="pred1">Antes de partir: ¿cuántos milisegundos crees que vas a demorar?</label>
+      <input type="number" id="pred1" min="50" max="2000" placeholder="ms">
+      <button style="margin-left:8px;padding:10px 18px;font-size:15px" onclick="setPred(1)">Anotar</button>
+      <small>Un parpadeo dura unos 150 ms. Escribe tu apuesta antes de saber el resultado.</small>
+    </div>
+    <div id="rtBox" class="rt-idle hidden">Toca aquí para empezar</div>
+    <p style="text-align:center;margin:12px 0 0;font-size:15px" id="rtInfo">Intento 0 de 5</p>
+    <div id="rtDone" class="hidden">
+      <div class="big" id="rtAvg">—</div>
+      <div class="note" id="rtNote"></div>
+      <p style="text-align:center;margin-top:14px"><button onclick="go(2)">Continuar a la estación 2</button></p>
+    </div>
+  </section>
+
+  <!-- ============ ESTACIÓN 2 ============ -->
+  <section class="card hidden" id="s2">
+    <h2>Estación 2 · Encontrar lo distinto</h2>
+    <p class="lead" id="s2lead">Dos rondas. En cada una, toca lo antes posible la figura que no se repite.</p>
+    <div class="pred" id="p2">
+      <label for="pred2">La ronda 2 será más lenta que la 1. ¿Cuántas veces más lenta crees que será?</label>
+      <input type="number" id="pred2" min="1" max="30" step="0.5" placeholder="ej: 2">
+      <button style="margin-left:8px;padding:10px 18px;font-size:15px" onclick="setPred(2)">Anotar</button>
+      <small>Si crees que demorarás el doble, escribe 2.</small>
+    </div>
+    <p style="font-weight:bold;color:var(--coral);margin:0 0 10px" id="s2target">—</p>
+    <div id="searchGrid" class="hidden"></div>
+    <p style="text-align:center;margin-top:12px" id="s2btnrow" class="hidden"><button id="s2btn" onclick="startSearch()">Empezar ronda 1</button></p>
+    <div id="s2done" class="hidden">
+      <table>
+        <tr><td>Ronda 1 · el color solo salta</td><td class="v" id="v_pop">—</td></tr>
+        <tr><td>Ronda 2 · hay que revisar uno por uno</td><td class="v" id="v_conj">—</td></tr>
+      </table>
+      <div class="note" id="s2note"></div>
+      <p style="text-align:center;margin-top:14px"><button onclick="go(3)">Continuar a la estación 3</button></p>
+    </div>
+  </section>
+
+  <!-- ============ ESTACIÓN 3 ============ -->
+  <section class="card hidden" id="s3">
+    <h2>Estación 3 · Cinco segundos</h2>
+    <p class="lead">Vas a ver una pantalla durante cinco segundos y luego desaparece. Después te preguntamos qué recuerdas. No vale volver atrás.</p>
+    <div class="pred" id="p3">
+      <label for="pred3">Van a ser 2 pantallas con 2 preguntas cada una. ¿Cuántas de las 4 crees que vas a acertar?</label>
+      <input type="number" id="pred3" min="0" max="4" placeholder="0 a 4">
+      <button style="margin-left:8px;padding:10px 18px;font-size:15px" onclick="setPred(3)">Anotar</button>
+    </div>
+    <div id="s3intro" class="hidden">
+      <p style="text-align:center"><button class="coral" onclick="showScreen()">Mostrar la pantalla (5 segundos)</button></p>
+    </div>
+    <div id="s3stage" class="hidden">
+      <p style="text-align:center;font-weight:bold;color:var(--coral)" id="s3timer">5</p>
+      <div id="s3fake"></div>
+    </div>
+    <div id="s3quiz" class="hidden">
+      <p style="font-weight:bold" id="s3q">—</p>
+      <div class="opts" id="s3opts"></div>
+    </div>
+    <div id="s3done" class="hidden">
+      <table id="s3table"></table>
+      <div class="note" id="s3note"></div>
+      <p style="text-align:center;margin-top:14px"><button onclick="go(4)">Continuar a la estación 4</button></p>
+    </div>
+  </section>
+
+  <!-- ============ ESTACIÓN 4 ============ -->
+  <section class="card hidden" id="s4">
+    <h2>Estación 4 · Algo está cambiando</h2>
+    <p class="lead">La imagen va a parpadear. Una de las figuras cambia cada vez. Cuando la encuentres, tócala.</p>
+    <div class="pred" id="p4">
+      <label for="pred4">¿Cuántos segundos crees que vas a demorar en encontrar la figura que cambia?</label>
+      <input type="number" id="pred4" min="1" max="300" placeholder="segundos">
+      <button style="margin-left:8px;padding:10px 18px;font-size:15px" onclick="setPred(4)">Anotar</button>
+      <small>Hay nueve figuras. Una cambia de color en cada parpadeo, a plena vista.</small>
+    </div>
+    <div id="cbStage" class="hidden"></div>
+    <p style="text-align:center;margin-top:12px" id="cbBtnRow" class="hidden">
+      <button id="cbBtn" onclick="startCB()">Empezar</button>
+      <button class="ghost" id="cbGiveUp" onclick="giveUpCB()" style="display:none;margin-left:8px">No la encuentro</button>
+    </p>
+    <div id="cbDone" class="hidden">
+      <div class="big" id="cbTime">—</div>
+      <div class="note" id="cbNote"></div>
+      <p style="text-align:center;margin-top:14px"><button onclick="go(5)">Ver mis resultados</button></p>
+    </div>
+  </section>
+
+  <!-- ============ RESULTADOS ============ -->
+  <section class="card hidden" id="s5">
+    <h2>Tus resultados</h2>
+    <p class="lead">Copien estos números en la ficha. Cada integrante de la pareja anota los suyos.</p>
+    <table id="finalTable"></table>
+    <p style="margin:16px 0 4px;font-weight:bold;font-size:14px">Código de resultados (cópienlo tal cual en la ficha):</p>
+    <code id="finalCode">—</code>
+    <div class="note">
+      <b>Lo interesante no es la columna “real”: es la de calibración.</b> Acaban de predecir el
+      comportamiento de una sola persona, ustedes mismos, en tareas que hicieron mil veces. Si ahí
+      se equivocaron, piensen cuánto pueden confiar en su intuición cuando predigan el comportamiento
+      de un usuario que no conocen.
+    </div>
+    <div class="note" style="background:var(--light)">
+      <b>Ahora, en la ficha:</b> comparen su tabla con la de su pareja y respondan las cuatro preguntas
+      de reflexión. No se evalúan los números, sino lo que logran explicar con ellos.
+    </div>
+    <p style="text-align:center;margin-top:16px"><button class="ghost" onclick="location.reload()">Volver a empezar</button></p>
+  </section>
+
+</div>
+
+<footer>IIC3182 — Interfaces Humano-Computador · Pontificia Universidad Católica de Chile</footer>
+
+<script>
+/* ===================== utilidades ===================== */
+var R = { rt:null, pop:null, conj:null, cinco:0, cincoTotal:0, cb:null,
+          p1:null, p2:null, p3:null, p4:null };
+
+/* predicciones: el corazón metacognitivo de la actividad */
+function setPred(n){
+  var el = document.getElementById('pred'+n);
+  var v = parseFloat(el.value);
+  if (isNaN(v)){ el.focus(); return; }
+  R['p'+n] = v;
+  document.getElementById('p'+n).classList.add('hidden');
+  if (n===1){ document.getElementById('rtBox').classList.remove('hidden'); }
+  if (n===2){
+    document.getElementById('searchGrid').classList.remove('hidden');
+    document.getElementById('s2btnrow').classList.remove('hidden');
+  }
+  if (n===3){ document.getElementById('s3intro').classList.remove('hidden'); }
+  if (n===4){
+    document.getElementById('cbStage').classList.remove('hidden');
+    document.getElementById('cbBtnRow').classList.remove('hidden');
+  }
+}
+
+function go(n){
+  for (var i=1;i<=5;i++){
+    document.getElementById('s'+i).classList.add('hidden');
+    var chip = document.getElementById('c'+i);
+    chip.className = 'chip' + (i<n ? ' done' : (i===n ? ' on' : ''));
+  }
+  document.getElementById('s'+n).classList.remove('hidden');
+  window.scrollTo({top:0, behavior:'smooth'});
+  if (n===5) renderFinal();
+}
+function rand(a,b){ return a + Math.random()*(b-a); }
+function shuffle(arr){
+  for (var i=arr.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=arr[i]; arr[i]=arr[j]; arr[j]=t; }
+  return arr;
+}
+
+/* ===================== 1. tiempo de reacción ===================== */
+var rtBox = document.getElementById('rtBox');
+var rtState = 'idle', rtStart = 0, rtTimer = null, rtTries = [];
+
+rtBox.addEventListener('click', function(){
+  if (rtState === 'idle'){ armRT(); }
+  else if (rtState === 'wait'){
+    clearTimeout(rtTimer);
+    rtBox.className = 'rt-idle';
+    rtBox.textContent = 'Te adelantaste. Toca para repetir el intento.';
+    rtState = 'idle';
+  }
+  else if (rtState === 'go'){
+    var ms = Math.round(performance.now() - rtStart);
+    rtTries.push(ms);
+    rtState = 'idle';
+    document.getElementById('rtInfo').textContent =
+      'Intento ' + rtTries.length + ' de 5 · último: ' + ms + ' ms';
+    if (rtTries.length >= 5){ finishRT(); }
+    else {
+      rtBox.className = 'rt-idle';
+      rtBox.textContent = ms + ' ms. Toca para el siguiente intento.';
+    }
+  }
+});
+
+function armRT(){
+  rtState = 'wait';
+  rtBox.className = 'rt-wait';
+  rtBox.textContent = 'Espera al verde…';
+  rtTimer = setTimeout(function(){
+    rtState = 'go';
+    rtBox.className = 'rt-go';
+    rtBox.textContent = '¡AHORA!';
+    rtStart = performance.now();
+  }, rand(1400, 4200));
+}
+
+function finishRT(){
+  var sorted = rtTries.slice().sort(function(a,b){return a-b;});
+  var med = sorted[2];
+  R.rt = med;
+  rtBox.className = 'rt-idle';
+  rtBox.textContent = 'Listo';
+  document.getElementById('rtDone').classList.remove('hidden');
+  document.getElementById('rtAvg').textContent = med + ' ms';
+  var msg;
+  if (med < 260) msg = 'Estás por debajo del modelo. Card, Moran y Newell estimaron unos 240 ms para percibir, decidir y ejecutar.';
+  else if (med < 340) msg = 'Muy cerca de los 240 ms que predice el Model Human Processor. Un modelo de 1983 acertándole a tu dedo.';
+  else msg = 'Por encima de los 240 ms del modelo. Influyen el cansancio, la pantalla y hasta el retardo del táctil.';
+  document.getElementById('rtNote').innerHTML =
+    '<b>Tu mediana: ' + med + ' ms.</b> ' + msg +
+    ' Recuerda que ese tiempo se reparte en tres etapas: percibir (~100 ms), decidir (~70 ms) y mover la mano (~70 ms).';
+}
+
+/* ===================== 2. búsqueda visual ===================== */
+var searchRound = 0, searchStart = 0;
+var GRID = document.getElementById('searchGrid');
+
+function startSearch(){
+  searchRound++;
+  document.getElementById('s2btn').disabled = true;
+  GRID.innerHTML = '';
+  var w = GRID.clientWidth, h = GRID.clientHeight;
+  var n = 44, items = [];
+
+  if (searchRound === 1){
+    document.getElementById('s2target').textContent = 'Ronda 1: toca el círculo ROJO.';
+    for (var i=0;i<n;i++) items.push({shape:'ci', color:'#2F3C7E'});
+    items[Math.floor(Math.random()*n)] = {shape:'ci', color:'#F96167', target:true};
+  } else {
+    document.getElementById('s2target').textContent = 'Ronda 2: toca el CUADRADO ROJO (hay círculos rojos y cuadrados azules).';
+    for (var j=0;j<n;j++){
+      items.push(j % 2 === 0 ? {shape:'ci', color:'#F96167'} : {shape:'sq', color:'#2F3C7E'});
+    }
+    items[Math.floor(Math.random()*n)] = {shape:'sq', color:'#F96167', target:true};
+  }
+
+  shuffle(items);
+  var cols = Math.floor(w/40), cw = w/cols, rows = Math.ceil(n/cols), ch = h/rows;
+  items.forEach(function(it, idx){
+    var d = document.createElement('div');
+    d.className = 'item ' + it.shape;
+    d.style.background = it.color;
+    var cx = (idx % cols) * cw + rand(3, Math.max(4, cw-30));
+    var cy = Math.floor(idx / cols) * ch + rand(3, Math.max(4, ch-30));
+    d.style.left = cx + 'px';
+    d.style.top = cy + 'px';
+    if (it.target){
+      d.addEventListener('click', function(){
+        var ms = (performance.now() - searchStart)/1000;
+        finishSearch(ms);
+      });
+    }
+    GRID.appendChild(d);
+  });
+  searchStart = performance.now();
+}
+
+function finishSearch(sec){
+  var txt = sec.toFixed(1) + ' s';
+  if (searchRound === 1){
+    R.pop = Number(sec.toFixed(1));
+    document.getElementById('v_pop').textContent = txt;
+    document.getElementById('s2btn').disabled = false;
+    document.getElementById('s2btn').textContent = 'Empezar ronda 2';
+    GRID.innerHTML = '';
+    document.getElementById('s2target').textContent = 'Ronda 1 lista: ' + txt + '. Cuando estés, parte la ronda 2.';
+  } else {
+    R.conj = Number(sec.toFixed(1));
+    document.getElementById('v_conj').textContent = txt;
+    document.getElementById('s2btn').style.display = 'none';
+    document.getElementById('s2done').classList.remove('hidden');
+    GRID.innerHTML = '';
+    var ratio = (R.conj / Math.max(R.pop, 0.1)).toFixed(1);
+    document.getElementById('s2note').innerHTML =
+      '<b>La segunda te tomó ' + ratio + ' veces lo de la primera.</b> ' +
+      'En la ronda 1 el color era único: el sistema visual lo detecta de golpe, sin buscar. Eso es procesamiento ' +
+      'preatentivo. En la ronda 2 ningún atributo por sí solo identifica al objetivo (hay rojos y hay cuadrados), ' +
+      'así que hay que revisar de a uno. Por eso una interfaz con un solo color de acento se navega sola, y una ' +
+      'con seis colores obliga a leer todo.';
+  }
+}
+
+/* ===================== 3. cinco segundos ===================== */
+var PANTALLAS = [
+  {
+    id:'A',
+    html:
+      '<div class="fake">' +
+        '<div class="fk-bar">viajesur.cl</div>' +
+        '<div class="fk-hero">' +
+          '<h3>Pasajes a Puerto Montt desde $19.900</h3>' +
+          '<p style="color:#6B6B6B;margin:0 0 16px">Salidas diarias · Equipaje incluido</p>' +
+          '<span class="fk-cta">Buscar pasajes</span>' +
+        '</div>' +
+        '<div class="fk-row">' +
+          '<div class="fk-blk">Destinos</div><div class="fk-blk">Ayuda</div><div class="fk-blk">Mi cuenta</div>' +
+        '</div>' +
+      '</div>',
+    preguntas:[
+      { q:'¿De qué se trataba la pantalla?',
+        opts:['Venta de pasajes de viaje','Un banco','Un curso online','Una tienda de ropa'], ok:0 },
+      { q:'¿Qué era lo más destacado?',
+        opts:['Un botón de buscar pasajes','Una publicidad amarilla','Un menú lateral','Una tabla de precios'], ok:0 }
+    ]
+  },
+  {
+    id:'B',
+    html:
+      '<div class="fake">' +
+        '<div class="fk-bar">ofertasya.cl</div>' +
+        '<div class="fk-ad">★ ¡SORTEO! GANA UN TELEVISOR ★</div>' +
+        '<div class="fk-row">' +
+          '<div class="fk-blk">Zapatillas running<br><b>$34.990</b></div>' +
+          '<div class="fk-blk">Audífonos<br><b>$12.500</b></div>' +
+          '<div class="fk-blk">Mochila<br><b>$21.000</b></div>' +
+        '</div>' +
+        '<div class="fk-ad2">Suscríbete y recibe un cupón</div>' +
+        '<div class="fk-row">' +
+          '<div class="fk-blk">Polera<br><b>$8.990</b></div>' +
+          '<div class="fk-blk">Reloj<br><b>$45.000</b></div>' +
+          '<div class="fk-blk">Lentes<br><b>$15.900</b></div>' +
+        '</div>' +
+        '<div class="fk-row"><div class="fk-blk">Envíos</div><div class="fk-blk">Ayuda</div><div class="fk-blk">Cuenta</div></div>' +
+      '</div>',
+    preguntas:[
+      { q:'¿De qué se trataba la pantalla?',
+        opts:['Una tienda con varios productos','Una aerolínea','Un diario','Una app de comida'], ok:0 },
+      { q:'¿Qué era lo más destacado?',
+        opts:['El sorteo de un televisor','El precio de las zapatillas','El buscador','El menú de ayuda'], ok:0 }
+    ]
+  }
+];
+
+var pIdx = 0, qIdx = 0, aciertos = [];
+
+function showScreen(){
+  document.getElementById('s3intro').classList.add('hidden');
+  document.getElementById('s3quiz').classList.add('hidden');
+  var stage = document.getElementById('s3stage');
+  stage.classList.remove('hidden');
+  document.getElementById('s3fake').innerHTML = PANTALLAS[pIdx].html;
+  var t = 5;
+  document.getElementById('s3timer').textContent = t;
+  var iv = setInterval(function(){
+    t--;
+    document.getElementById('s3timer').textContent = t > 0 ? t : '';
+    if (t <= 0){
+      clearInterval(iv);
+      stage.classList.add('hidden');
+      document.getElementById('s3fake').innerHTML = '';
+      qIdx = 0;
+      askQ();
+    }
+  }, 1000);
+}
+
+function askQ(){
+  var p = PANTALLAS[pIdx].preguntas[qIdx];
+  document.getElementById('s3quiz').classList.remove('hidden');
+  document.getElementById('s3q').textContent =
+    'Pantalla ' + PANTALLAS[pIdx].id + ' · pregunta ' + (qIdx+1) + ' de ' + PANTALLAS[pIdx].preguntas.length + ': ' + p.q;
+  var box = document.getElementById('s3opts');
+  box.innerHTML = '';
+  var order = shuffle(p.opts.map(function(o,i){ return {t:o, i:i}; }));
+  order.forEach(function(o){
+    var b = document.createElement('button');
+    b.textContent = o.t;
+    b.onclick = function(){ answerQ(o.i === p.ok); };
+    box.appendChild(b);
+  });
+}
+
+function answerQ(ok){
+  if (ok) R.cinco++;
+  R.cincoTotal++;
+  aciertos.push({p:PANTALLAS[pIdx].id, ok:ok});
+  qIdx++;
+  if (qIdx < PANTALLAS[pIdx].preguntas.length){ askQ(); return; }
+  pIdx++;
+  document.getElementById('s3quiz').classList.add('hidden');
+  if (pIdx < PANTALLAS.length){
+    document.getElementById('s3intro').classList.remove('hidden');
+    document.getElementById('s3intro').innerHTML =
+      '<p style="text-align:center"><button class="coral" onclick="showScreen()">Mostrar la siguiente pantalla (5 segundos)</button></p>';
+  } else {
+    finishCinco();
+  }
+}
+
+function finishCinco(){
+  var tabla = '';
+  var okA = aciertos.filter(function(a){ return a.p==='A' && a.ok; }).length;
+  var okB = aciertos.filter(function(a){ return a.p==='B' && a.ok; }).length;
+  tabla += '<tr><td>Pantalla A · un solo foco</td><td class="v">' + okA + ' de 2</td></tr>';
+  tabla += '<tr><td>Pantalla B · todo compite</td><td class="v">' + okB + ' de 2</td></tr>';
+  document.getElementById('s3table').innerHTML = tabla;
+  document.getElementById('s3done').classList.remove('hidden');
+  var msg;
+  if (okA > okB) msg = 'Te fue mejor en la pantalla con un solo foco. Es el resultado esperable: cuando un elemento domina, cinco segundos alcanzan.';
+  else if (okA === okB) msg = 'Te fue igual en ambas. Fíjate igual en qué recordaste de cada una: en la B, ¿recordaste un producto o el sorteo?';
+  else msg = 'Curiosamente te fue mejor en la caótica. Vale la pena preguntarse qué te ancló: probablemente el elemento más grande y amarillo, que era publicidad.';
+  document.getElementById('s3note').innerHTML =
+    '<b>' + msg + '</b> En la pantalla B lo que más destaca es un sorteo, no los productos. ' +
+    'Esa es la pregunta de diseño: ¿lo que gana la atención es lo que la persona vino a hacer?';
+}
+
+/* ===================== 4. ceguera al cambio ===================== */
+var cbA = [], cbB = [], cbIdx = -1, cbIv = null, cbStart = 0, cbFlip = true;
+var STAGE = document.getElementById('cbStage');
+
+function buildCB(){
+  var w = STAGE.clientWidth, h = STAGE.clientHeight;
+  var colores = ['#2F3C7E','#F96167','#F9E795','#1E9E5A','#6B6B6B','#8E44AD','#E67E22','#16A085'];
+  cbA = []; cbB = [];
+  var n = 9;
+  for (var i=0;i<n;i++){
+    var it = {
+      x: rand(10, Math.max(20, w-70)),
+      y: rand(10, Math.max(20, h-70)),
+      s: rand(34, 58),
+      c: colores[i % colores.length]
+    };
+    cbA.push(it);
+    cbB.push({x:it.x, y:it.y, s:it.s, c:it.c});
+  }
+  cbIdx = Math.floor(Math.random()*n);
+  var otro = colores.filter(function(c){ return c !== cbA[cbIdx].c; });
+  cbB[cbIdx].c = otro[Math.floor(Math.random()*otro.length)];
+}
+
+function paintCB(arr){
+  STAGE.innerHTML = '';
+  arr.forEach(function(it, i){
+    var d = document.createElement('div');
+    d.className = 'cbItem';
+    d.style.left = it.x + 'px'; d.style.top = it.y + 'px';
+    d.style.width = it.s + 'px'; d.style.height = it.s + 'px';
+    d.style.background = it.c;
+    d.addEventListener('click', function(){ clickCB(i); });
+    STAGE.appendChild(d);
+  });
+}
+
+function startCB(){
+  document.getElementById('cbBtn').style.display = 'none';
+  document.getElementById('cbGiveUp').style.display = 'inline-block';
+  buildCB();
+  cbStart = performance.now();
+  cbFlip = true;
+  paintCB(cbA);
+  cbIv = setInterval(function(){
+    if (cbFlip){ STAGE.innerHTML = ''; }
+    else { paintCB(Math.random() < .5 ? cbA : cbB); }
+    cbFlip = !cbFlip;
+  }, 320);
+  setTimeout(function(){ if (cbIv) paintCB(cbB); }, 340);
+}
+
+function clickCB(i){
+  if (i !== cbIdx) return;
+  var sec = (performance.now() - cbStart)/1000;
+  endCB(Number(sec.toFixed(1)));
+}
+
+function giveUpCB(){ endCB(null); }
+
+function endCB(sec){
+  clearInterval(cbIv); cbIv = null;
+  paintCB(cbB);
+  document.getElementById('cbGiveUp').style.display = 'none';
+  R.cb = sec;
+  document.getElementById('cbDone').classList.remove('hidden');
+  document.getElementById('cbTime').textContent = sec === null ? 'No la encontraste' : sec + ' s';
+  document.getElementById('cbNote').innerHTML =
+    '<b>Ceguera al cambio.</b> El cuadrado estuvo cambiando de color todo el tiempo, delante de tus ojos. ' +
+    'El parpadeo borra la señal de movimiento que normalmente te avisaría, y sin esa señal hay que comparar de memoria, ' +
+    'de a un objeto por vez. Por eso un mensaje que aparece mientras la pantalla se recarga puede pasar completamente ' +
+    'desapercibido, aunque esté en el centro.';
+}
+
+/* ===================== resultados ===================== */
+function fila(nombre, pred, real, unidad, mejorSiMenor){
+  var p = (pred === null || isNaN(pred)) ? '—' : pred + unidad;
+  var r = (real === null) ? '—' : real + unidad;
+  var gap = '—';
+  if (pred !== null && real !== null && !isNaN(pred)){
+    var d = real - pred;
+    var pct = Math.abs(d) / Math.max(Math.abs(pred), 0.01) * 100;
+    var cerca = pct <= 25;
+    var signo = d > 0 ? 'peor de lo que creías' : (d < 0 ? 'mejor de lo que creías' : 'exacto');
+    if (!mejorSiMenor) signo = d > 0 ? 'mejor de lo que creías' : (d < 0 ? 'peor de lo que creías' : 'exacto');
+    gap = '<span class="' + (cerca ? 'gap-ok' : 'gap-bad') + '">' +
+          (cerca ? 'bien calibrado' : signo) + '</span>';
+  }
+  return '<tr><td>' + nombre + '</td><td class="r">' + p + '</td><td class="v">' + r + '</td><td class="r">' + gap + '</td></tr>';
+}
+
+function renderFinal(){
+  var ratioReal = (R.pop && R.conj) ? Number((R.conj / R.pop).toFixed(1)) : null;
+  var t = '<tr><th>Prueba</th><th class="r">Predijiste</th><th class="r">Real</th><th class="r">Calibración</th></tr>';
+  t += fila('Tiempo de reacción', R.p1, R.rt, ' ms', true);
+  t += fila('Cuántas veces más lenta la ronda 2', R.p2, ratioReal, '×', true);
+  t += fila('Aciertos tras cinco segundos', R.p3, R.cinco, ' de ' + R.cincoTotal, false);
+  t += fila('Segundos hasta ver el cambio', R.p4, R.cb, ' s', true);
+  document.getElementById('finalTable').innerHTML = t;
+
+  var extra = '<tr><td colspan="4" style="padding-top:14px;color:#6B6B6B;font-size:14px">' +
+              'Detalle: búsqueda por color ' + (R.pop !== null ? R.pop + ' s' : '—') +
+              ' · búsqueda uno por uno ' + (R.conj !== null ? R.conj + ' s' : '—') + '</td></tr>';
+  document.getElementById('finalTable').innerHTML += extra;
+
+  document.getElementById('finalCode').textContent =
+    'RT=' + (R.rt !== null ? R.rt : '-') + '(pred ' + (R.p1 !== null ? R.p1 : '-') + ')' +
+    ' | POP=' + (R.pop !== null ? R.pop : '-') +
+    ' | CONJ=' + (R.conj !== null ? R.conj : '-') +
+    ' | RATIO=' + (ratioReal !== null ? ratioReal : '-') + '(pred ' + (R.p2 !== null ? R.p2 : '-') + ')' +
+    ' | 5S=' + R.cinco + '/' + R.cincoTotal + '(pred ' + (R.p3 !== null ? R.p3 : '-') + ')' +
+    ' | CB=' + (R.cb === null ? 'NF' : R.cb) + '(pred ' + (R.p4 !== null ? R.p4 : '-') + ')';
+}
+</script>
+</body>
+</html>
